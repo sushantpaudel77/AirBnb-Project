@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestControllerAdvice
+@RestController
 @RequestMapping(path = "/admin/hotels/{hotelId}/rooms")
 @RequiredArgsConstructor
 public class RoomAdminController {

@@ -21,7 +21,7 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
 
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
-        List<String> allowedRoutes = List.of("/v1/api/");
+        List<String> allowedRoutes = List.of("/v1/api/", "/actuator ");
 
         boolean isAllowed = allowedRoutes
                 .stream()

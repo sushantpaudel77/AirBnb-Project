@@ -3,7 +3,6 @@ package com.projects.airbnb.service;
 import com.projects.airbnb.dto.RoomDto;
 import com.projects.airbnb.entity.Hotel;
 import com.projects.airbnb.entity.Room;
-import com.projects.airbnb.exception.ResourceNotFoundException;
 import com.projects.airbnb.repository.HotelRepository;
 import com.projects.airbnb.repository.RoomRepository;
 import com.projects.airbnb.utility.EntityFinder;
@@ -11,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RoomServiceImpl implements RoomService {
 
+    private final InventoryService inventoryService;
     private final EntityFinder entityFinder;
     private final ModelMapper modelMapper;
     private final RoomRepository roomRepository;
@@ -35,6 +36,11 @@ public class RoomServiceImpl implements RoomService {
         room.setHotel(existingHotel);
 
         Room savedRoom = roomRepository.save(room);
+
+        if (Boolean.TRUE.equals(existingHotel.getIsActive())) {
+            inventoryService.initializeRoomForAYear(room);
+        }
+
         return modelMapper.map(savedRoom, RoomDto.class);
     }
 
@@ -57,15 +63,12 @@ public class RoomServiceImpl implements RoomService {
         return modelMapper.map(existingRoom, RoomDto.class);
     }
 
+    @Transactional
     @Override
     public void deleteRoomById(Long roomId) {
         log.info("Deleting the room ID: {}", roomId);
-        roomRepository.findById(roomId)
-                .ifPresentOrElse(roomRepository::delete,
-                        () -> {
-                            throw new ResourceNotFoundException("Room not found with the ID: " + roomId);
-                        });
-
-        //TODO: delete all future inventory
+        Room existingRoom = entityFinder.findByIdOrThrow(roomRepository, roomId, "Room");
+        inventoryService.deleteAllInventories(existingRoom);
+        roomRepository.deleteById(roomId);
     }
 }

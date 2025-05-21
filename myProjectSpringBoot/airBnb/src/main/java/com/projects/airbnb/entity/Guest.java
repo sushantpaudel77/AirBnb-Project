@@ -27,6 +27,4 @@ public class Guest {
 
     private Integer age;
 
-    @ManyToMany
-    private Set<Booking> bookings;
 }

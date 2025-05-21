@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop  # Use 'update' or 'none' in production
+      ddl-auto: update  # Use 'update' or 'none' in production
     show-sql: true
     properties:
       hibernate:

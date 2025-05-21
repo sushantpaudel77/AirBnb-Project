@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
+//@Table(
+//        uniqueConstraints = @UniqueConstraint(columnNames = {"hotel_id", "type"})
+//)
 public class Room {
 
     @Id

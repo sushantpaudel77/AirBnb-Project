@@ -1,14 +1,22 @@
 package com.projects.airbnb.service;
 
 import com.projects.airbnb.dto.HotelDto;
+import com.projects.airbnb.dto.HotelInfoDto;
+import com.projects.airbnb.dto.RoomDto;
 import com.projects.airbnb.entity.Hotel;
+import com.projects.airbnb.entity.Room;
 import com.projects.airbnb.exception.ResourceNotFoundException;
 import com.projects.airbnb.repository.HotelRepository;
+import com.projects.airbnb.repository.RoomRepository;
 import com.projects.airbnb.utility.EntityFinder;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 
 @Slf4j
@@ -19,6 +27,8 @@ public class HotelServiceImpl implements HotelService {
     private final HotelRepository hotelRepository;
     private final ModelMapper modelMapper;
     private final EntityFinder entityFinder;
+    private final InventoryService inventoryService;
+    private final RoomRepository roomRepository;
 
     @Override
     public HotelDto createNewHotel(HotelDto hotelDto) {
@@ -44,7 +54,7 @@ public class HotelServiceImpl implements HotelService {
 
     @Override
     public HotelDto updateHotelById(Long hotelId, HotelDto updatedHotel) {
-        Hotel existingHotel = entityFinder.findByIdOrThrow(hotelRepository, hotelId, "Hotel");
+        Hotel existingHotel = entityFinder.findByIdOrThrow(hotelRepository, hotelId, HotelField.HOTEL.getKey());
 
         // Map new values over the existing object
         modelMapper.map(updatedHotel, existingHotel);
@@ -54,22 +64,54 @@ public class HotelServiceImpl implements HotelService {
         return modelMapper.map(savedHotel, HotelDto.class);
     }
 
+
+    @Transactional
     @Override
     public void deleteHotelById(Long hotelId) {
-        hotelRepository.findById(hotelId)
-                .ifPresentOrElse(hotelRepository::delete,
-                        () -> {
-                            throw new ResourceNotFoundException("Hotel not found with the ID: " + hotelId);
-                        });
-        //TODO: delete the future inventories for the hotel
+        Hotel existingHotel = entityFinder.findByIdOrThrow(hotelRepository, hotelId, HotelField.HOTEL.getKey());
+
+        for (Room room : existingHotel.getRooms()) {
+            inventoryService.deleteAllInventories(room);
+            roomRepository.deleteById(room.getId());
+        }
+        hotelRepository.deleteById(hotelId);
     }
 
+
+    @Transactional
     @Override
     public void activateHotel(Long hotelId) {
         log.info("Activating the hotel with ID: {}", hotelId);
-        Hotel existingHotel = entityFinder.findByIdOrThrow(hotelRepository, hotelId, "Hotel");
+        Hotel existingHotel = entityFinder.findByIdOrThrow(hotelRepository, hotelId, HotelField.HOTEL.getKey());
 
         existingHotel.setIsActive(true);
-        //TODO: Create a inventory for all the rooms for this hotel
+
+        // assuming only do it once
+        for (Room room : existingHotel.getRooms()) {
+            inventoryService.initializeRoomForAYear(room);
+        }
+    }
+
+    @Override
+    public HotelInfoDto getHotelInfoById(Long hotelId) {
+        Hotel existingHotel = entityFinder.findByIdOrThrow(hotelRepository, hotelId, HotelField.HOTEL.getKey());
+
+        List<RoomDto> rooms = existingHotel.getRooms()
+                .stream()
+                .map(element -> modelMapper.map(element, RoomDto.class))
+                .toList();
+
+        return new HotelInfoDto(modelMapper.map(existingHotel, HotelDto.class), rooms);
+    }
+
+    // helper enum
+    @Getter
+    public enum HotelField {
+        HOTEL("hotel");
+        private final String key;
+
+        HotelField(String key) {
+            this.key = key;
+        }
     }
 }

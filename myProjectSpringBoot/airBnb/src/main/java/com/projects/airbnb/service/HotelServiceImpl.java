@@ -9,6 +9,7 @@ import com.projects.airbnb.exception.ResourceNotFoundException;
 import com.projects.airbnb.repository.HotelRepository;
 import com.projects.airbnb.repository.RoomRepository;
 import com.projects.airbnb.utility.EntityFinder;
+import com.projects.airbnb.utility.HotelField;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -102,16 +103,5 @@ public class HotelServiceImpl implements HotelService {
                 .toList();
 
         return new HotelInfoDto(modelMapper.map(existingHotel, HotelDto.class), rooms);
-    }
-
-    // helper enum
-    @Getter
-    public enum HotelField {
-        HOTEL("hotel");
-        private final String key;
-
-        HotelField(String key) {
-            this.key = key;
-        }
     }
 }

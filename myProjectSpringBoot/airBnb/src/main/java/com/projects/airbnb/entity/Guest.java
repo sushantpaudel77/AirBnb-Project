@@ -2,14 +2,16 @@ package com.projects.airbnb.entity;
 
 import com.projects.airbnb.entity.enums.Gender;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Set;
 
 @Entity
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class Guest {
 
     @Id
